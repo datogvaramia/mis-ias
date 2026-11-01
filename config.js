@@ -8,6 +8,7 @@
 //  - contains:  (opcional) solo modelos cuyo id contenga alguna de estas palabras
 //  - plan:      tu plan (se ve en "Mis cuentas")
 //  - url:       web oficial que se abre desde "Mis cuentas"
+//  - allFree:   (opcional) grupo con TODOS los modelos gratis de OpenRouter
 //
 //  Los modelos de cada IA se cargan solos desde OpenRouter, así que
 //  cuando salga uno nuevo aparecerá sin tocar nada.
@@ -17,6 +18,12 @@ window.CONFIG = {
   appName: "Mis IAs",
 
   providers: [
+    {
+      id: "gratis",
+      name: "Gratis",
+      color: "#4ade80",
+      allFree: true, // todos los modelos gratuitos de OpenRouter, de cualquier empresa
+    },
     {
       id: "chatgpt",
       name: "ChatGPT",

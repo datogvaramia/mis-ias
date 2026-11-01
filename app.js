@@ -111,25 +111,26 @@
       const list = [];
       for (const m of data) {
         const id = m.id.toLowerCase();
+        const free = id.endsWith(":free") || (m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0);
+        const fullName = m.name || m.id;
         const p = CFG.providers.find((p) =>
-          p.prefixes.some((pre) => id.startsWith(pre)) &&
+          p.prefixes && p.prefixes.some((pre) => id.startsWith(pre)) &&
           (!p.contains || p.contains.some((c) => id.includes(c)))
         );
-        if (!p) continue;
-        const free = id.endsWith(":free") || (m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0);
-        list.push({
-          id: m.id,
-          name: (m.name || m.id).replace(/^[^:]+:\s*/, ""),
-          providerId: p.id,
-          free,
-          created: m.created || 0,
-        });
+        if (p) {
+          list.push({ id: m.id, name: fullName.replace(/^[^:]+:\s*/, ""), providerId: p.id, free, created: m.created || 0 });
+        }
+        // Grupo "Gratis": todos los modelos gratuitos de cualquier empresa
+        const g = CFG.providers.find((x) => x.allFree);
+        if (g && free && !id.startsWith("openrouter/")) {
+          list.push({ id: m.id, name: fullName, providerId: g.id, free, created: m.created || 0 });
+        }
       }
       list.sort((a, b) => (b.free - a.free) || (b.created - a.created));
       state.models = list;
       state.modelsError = null;
       if (!state.selected || !modelById(state.selected)) {
-        state.selected = (list.find((m) => m.providerId === "claude" && m.id.includes("sonnet")) || list.find((m) => m.providerId === "claude") || list[0])?.id || null;
+        state.selected = (list.find((m) => m.free) || list[0])?.id || null;
       }
     } catch {
       state.modelsError = "No se pudo cargar la lista de modelos. Revisa tu conexión y recarga la página.";
@@ -346,7 +347,7 @@
 
   // ---------- Mis cuentas ----------
   function renderCards() {
-    $("#cards").innerHTML = CFG.providers.map((p) => `
+    $("#cards").innerHTML = CFG.providers.filter((p) => p.url).map((p) => `
       <a class="card" style="--c:${p.color}" href="${p.url}" target="_blank" rel="noopener">
         <h3><span class="dot" style="background:${p.color}"></span>${escapeHtml(p.name)}</h3>
         <div class="plan">${escapeHtml(p.plan || "")}</div>
